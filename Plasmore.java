@@ -1,11 +1,11 @@
-package pm;
-
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -80,7 +80,7 @@ final class JRestrictedSeparator extends JSeparator {
 public final class Plasmore extends JComponent {
     public static final int INIT_POLE_DIST = 100;
 
-    public static final double INIT_SCALE = 1.1;
+    public static final double INIT_SCALE = 1.3;
 
     public static final int MARGIN = 10;
 
@@ -91,9 +91,9 @@ public final class Plasmore extends JComponent {
 
     private double distortion = INIT_SCALE;
 
-    private int startX = 0;
+    private int startX = -2 * INIT_POLE_DIST;
 
-    private int startY = 0;
+    private int startY = -2 * INIT_POLE_DIST;
 
     public Plasmore() {
         /* Nothing to do here */
@@ -137,10 +137,49 @@ public final class Plasmore extends JComponent {
 
     @Override
     protected void paintComponent(final Graphics g) {
-        System.out.println("Drawing...");
-        final BufferedImage img =
-            draw(getWidth(), getHeight(), 0, 0, firstPoleDist, distortion);
+        final BufferedImage img = draw(
+            getWidth(), getHeight(),
+            startX, startY,
+            firstPoleDist, distortion);
         g.drawImage(img, 0, 0, null);
+    }
+
+    /* Oh come on. */
+    private static final class DragHandler extends MouseAdapter {
+        private final Plasmore plasmore;
+
+        private int lastX = 0;
+
+        private int lastY = 0;
+
+        public DragHandler(final Plasmore plasmore) {
+            this.plasmore = plasmore;
+        }
+
+        public void register() {
+            plasmore.addMouseListener(this);
+            plasmore.addMouseMotionListener(this);
+        }
+
+        /*
+         * Why are these even separate? I mean, it doesn't often make sense to
+         * know *that* there was drag without knowing *how much*.
+         */
+        @Override
+        public void mousePressed(final MouseEvent e) {
+            lastX = e.getX();
+            lastY = e.getY();
+        }
+
+        @Override
+        public void mouseDragged(final MouseEvent e) {
+            final int diffX = e.getX() - lastX;
+            final int diffY = e.getY() - lastY;
+            lastX = e.getX();
+            lastY = e.getY();
+            plasmore.setStartX(plasmore.getStartX() - diffX);
+            plasmore.setStartY(plasmore.getStartY() - diffY);
+        }
     }
 
     public static void main(final String[] args) {
@@ -156,13 +195,14 @@ public final class Plasmore extends JComponent {
                 win.setContentPane(content);
 
                 final Plasmore plasmore = new Plasmore();
+                new DragHandler(plasmore).register();
                 content.add(plasmore);
 
                 /* == Behold! The sidebar! == */
                 final Box sidebar = Box.createVerticalBox();
                 {
                     final Parameter p = new Parameter("Pole distance:",
-                        new SpinnerNumberModel(INIT_POLE_DIST, 10, 1000, 1));
+                        new SpinnerNumberModel(INIT_POLE_DIST, 10, 1000, 10));
                     p.addChangeListener(new ChangeListener() {
                         @Override
                         public void stateChanged(final ChangeEvent e) {
@@ -175,7 +215,7 @@ public final class Plasmore extends JComponent {
                 sidebar.add(Box.createRigidArea(new Dimension(0, MARGIN)));
                 {
                     final Parameter p = new Parameter("Distortion:",
-                        new SpinnerNumberModel(INIT_SCALE, 0.6, 10, 0.1));
+                        new SpinnerNumberModel(INIT_SCALE, 0.7, 2.5, 0.1));
                     // TODO: Maybe change from "factor" to "log(factor)" ?
                     p.addChangeListener(new ChangeListener() {
                         @Override
@@ -240,7 +280,7 @@ public final class Plasmore extends JComponent {
 
                 win.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 win.setMinimumSize(new Dimension(300, 200));
-                win.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                win.setPreferredSize(new Dimension(800, 600));
                 win.pack();
                 win.setVisible(true);
             }
