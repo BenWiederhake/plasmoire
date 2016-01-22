@@ -1,6 +1,7 @@
 /*
- * Plasmore, a viewer for phase-aligned plasma/moire images Copyright (C) Ben
- * Wiederhake, 2016 Released to the Public Domain
+ * Plasmoire, a viewer for phase-aligned plasma/moire images
+ * Copyright (C) Ben Wiederhake, 2016
+ * Released to the Public Domain
  */
 
 import java.awt.BorderLayout;
@@ -33,7 +34,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /*
- * "Plasmore" is a simple viewer for what I used to call "plasma". This is
+ * "Plasmoire" is a simple viewer for what I used to call "plasma". This is
  * essentially a mapping from "distance to center" to a single grey-value, using
  * this weird approach:
  *
@@ -59,6 +60,12 @@ import javax.swing.event.ChangeListener;
  * This class is written in a semi-modular way. If you want to re-use core
  * drawing algorithm, you could either copy the last 30 lines (yes, it's that
  * short!), or call Plasmore.draw(). Everything else is necessary because GUI.
+ *
+ * Note that the concept of "zooming in" does not make any sense with this
+ * pattern, since the pattern *does not really exist*. Thus, if you were to zoom
+ * in, you could see the variation between the sampled points, which would
+ * immediately break the moire-ness, which is the great thing about this
+ * pattern.
  *
  * Have fun!
  */
@@ -113,7 +120,7 @@ final class JRestrictedSeparator extends JSeparator {
     }
 }
 
-public final class Plasmore extends JComponent {
+public final class Plasmoire extends JComponent {
     public static final int INIT_POLE_DIST = 100;
 
     public static final double INIT_SCALE = 1.3;
@@ -131,7 +138,7 @@ public final class Plasmore extends JComponent {
 
     private int startY = -2 * INIT_POLE_DIST;
 
-    public Plasmore() {
+    public Plasmoire() {
         /* Nothing to do here */
     }
 
@@ -182,19 +189,19 @@ public final class Plasmore extends JComponent {
 
     /* Oh come on. */
     private static final class DragHandler extends MouseAdapter {
-        private final Plasmore plasmore;
+        private final Plasmoire plasmoire;
 
         private int lastX = 0;
 
         private int lastY = 0;
 
-        public DragHandler(final Plasmore plasmore) {
-            this.plasmore = plasmore;
+        public DragHandler(final Plasmoire plasmoire) {
+            this.plasmoire = plasmoire;
         }
 
         public void register() {
-            plasmore.addMouseListener(this);
-            plasmore.addMouseMotionListener(this);
+            plasmoire.addMouseListener(this);
+            plasmoire.addMouseMotionListener(this);
         }
 
         /*
@@ -213,8 +220,8 @@ public final class Plasmore extends JComponent {
             final int diffY = e.getY() - lastY;
             lastX = e.getX();
             lastY = e.getY();
-            plasmore.setStartX(plasmore.getStartX() - diffX);
-            plasmore.setStartY(plasmore.getStartY() - diffY);
+            plasmoire.setStartX(plasmoire.getStartX() - diffX);
+            plasmoire.setStartY(plasmoire.getStartY() - diffY);
         }
     }
 
@@ -222,7 +229,7 @@ public final class Plasmore extends JComponent {
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                final JFrame win = new JFrame("Plasmore - parameterized plasma"
+                final JFrame win = new JFrame("Plasmoire - parameterized plasma"
                     + " like I knew them from age 8 or so");
                 final JPanel content =
                     new JPanel(new BorderLayout(MARGIN, MARGIN));
@@ -230,9 +237,9 @@ public final class Plasmore extends JComponent {
                     MARGIN, MARGIN, MARGIN, MARGIN));
                 win.setContentPane(content);
 
-                final Plasmore plasmore = new Plasmore();
-                new DragHandler(plasmore).register();
-                content.add(plasmore);
+                final Plasmoire plasmoire = new Plasmoire();
+                new DragHandler(plasmoire).register();
+                content.add(plasmoire);
 
                 /* == Behold! The sidebar! == */
                 final Box sidebar = Box.createVerticalBox();
@@ -242,7 +249,7 @@ public final class Plasmore extends JComponent {
                     p.addChangeListener(new ChangeListener() {
                         @Override
                         public void stateChanged(final ChangeEvent e) {
-                            plasmore.setFirstPoleDistance(
+                            plasmoire.setFirstPoleDistance(
                                 p.getValue().intValue());
                         }
                     });
@@ -256,7 +263,7 @@ public final class Plasmore extends JComponent {
                     p.addChangeListener(new ChangeListener() {
                         @Override
                         public void stateChanged(final ChangeEvent e) {
-                            plasmore.setDistortion(p.getValue().doubleValue());
+                            plasmoire.setDistortion(p.getValue().doubleValue());
                         }
                     });
                     sidebar.add(p);
@@ -279,7 +286,7 @@ public final class Plasmore extends JComponent {
                     btnFile.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(final ActionEvent e) {
-                            jfc.setDialogTitle("Save Plasmore to file");
+                            jfc.setDialogTitle("Save Plasmoire to file");
                             final int ret = jfc.showSaveDialog(win);
                             if (ret != JFileChooser.APPROVE_OPTION) {
                                 return;
@@ -288,16 +295,16 @@ public final class Plasmore extends JComponent {
                             if (file.exists()) {
                                 JOptionPane.showMessageDialog(win,
                                     "Don't want to overwrite existing file.",
-                                    "Plasmore: couldn't write",
+                                    "Plasmoire: couldn't write",
                                     JOptionPane.ERROR_MESSAGE);
                             }
                             final BufferedImage img = draw(
                                 fW.getValue().intValue(),
                                 fH.getValue().intValue(),
-                                plasmore.getStartX(),
-                                plasmore.getStartY(),
-                                plasmore.getFirstPoleDistance(),
-                                plasmore.getDistortion());
+                                plasmoire.getStartX(),
+                                plasmoire.getStartY(),
+                                plasmoire.getFirstPoleDistance(),
+                                plasmoire.getDistortion());
                             try {
                                 ImageIO.write(img, "png", file);
                             } catch (final IOException ex) {
