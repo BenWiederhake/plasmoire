@@ -7,8 +7,8 @@ this weird approach:
     sin(pow(dist², distortion))
 
 Now the funny thing is: it should be perfectly rotation-symmetric, since we
-only use the distance, right? But it isn't. The core "weirdness" comes the
-fact that if the derivative of pow(...) is exactly 2*Math.PI, then the
+only use the distance, right? But it isn't. The core "weirdness" comes from the
+fact that if the derivative of `pow(...)` is exactly `2*Math.PI`, then the
 grey-value doesn't change. Thus, it is only 90°-rotation symmetric. Since I
 don't want that, I further modified the expression so that it is highly
 irregular despite looking regular.
@@ -39,5 +39,3 @@ immediately break the moire-ness, which is the great thing about this
 pattern.
 
 Have fun!
-
-[!]
