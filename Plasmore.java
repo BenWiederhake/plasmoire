@@ -1,3 +1,8 @@
+/*
+ * Plasmore, a viewer for phase-aligned plasma/moire images Copyright (C) Ben
+ * Wiederhake, 2016 Released to the Public Domain
+ */
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -26,6 +31,37 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+/*
+ * "Plasmore" is a simple viewer for what I used to call "plasma". This is
+ * essentially a mapping from "distance to center" to a single grey-value, using
+ * this weird approach:
+ *
+ * sin(pow(dist, distortion))
+ *
+ * Now the funny thing is: it should be perfectly rotation-symmetric, since we
+ * only use the distance, right? But it isn't. The core "weirdness" comes the
+ * fact that if the derivative of pow(...) is exactly 2*Math.PI, then the
+ * grey-value doesn't change. Thus, it is only 90°-rotation symmetric. Since I
+ * don't want that, I further modified the expression so that it is highly
+ * irregular despite looking regular.
+ *
+ * Once you understand the core, it's actually pretty straight-forward to find a
+ * parameterization that allows one to choose the length until the first such
+ * "pole", which is exactly what the GUI allows you to do.
+ *
+ * The GUI currently allows you to:
+ * - move around by dragging the mouse
+ * - play around with distortion / pole length
+ * - save it to a file, using the same upper left corner and a specified
+ * width/height (great for wallpapers!)
+ *
+ * This class is written in a semi-modular way. If you want to re-use core
+ * drawing algorithm, you could either copy the last 30 lines (yes, it's that
+ * short!), or call Plasmore.draw(). Everything else is necessary because GUI.
+ *
+ * Have fun!
+ */
 
 /* == Overly verbose bullshit to do GUI in Java == */
 
@@ -264,10 +300,10 @@ public final class Plasmore extends JComponent {
                                 plasmore.getDistortion());
                             try {
                                 ImageIO.write(img, "png", file);
-                            } catch (final IOException e1) {
+                            } catch (final IOException ex) {
                                 JOptionPane.showMessageDialog(win,
                                     "Some write error occurred:\n"
-                                        + e1.getLocalizedMessage(),
+                                        + ex.getLocalizedMessage(),
                                     "Plasmore: couldn't write",
                                     JOptionPane.ERROR_MESSAGE);
                             }
@@ -302,7 +338,17 @@ public final class Plasmore extends JComponent {
         for (int y = startY; y < maxY; ++y) {
             for (int x = startX; x < maxX; ++x) {
                 /* Distance */
-                final int dist = x * x + y * y;
+                /*
+                 * The extra stuff is just to make sure there is no symmetry
+                 * whatsoever, even though it looks highly regular. Where does
+                 * the 1.618 come from? Simple, it's the Golden Ratio, it's the
+                 * number that looks the least like a pattern. Why "+1"? Well,
+                 * "dist" needs to stay positive (try it out!). Finally, there's
+                 * always a factor of two because, well, that's dueto the
+                 * interaction with 'magic'.
+                 */
+                final double dist =
+                    x * x + y * y - x / 1.618 - 2 * y * 1.618 + 1;
                 /* Basically: "sin of pow(dist, scale)" */
                 final double d = Math.sin(Math.pow(dist, distort) * magic);
                 /* Conversion of [0,1) to a color */
