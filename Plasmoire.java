@@ -121,9 +121,9 @@ final class JRestrictedSeparator extends JSeparator {
 }
 
 public final class Plasmoire extends JComponent {
-    public static final int INIT_POLE_DIST = 100;
+    public static final int INIT_POLE_DIST = 300;
 
-    public static final double INIT_SCALE = 1.3;
+    public static final double INIT_SCALE = 2;
 
     public static final int MARGIN = 10;
 
@@ -134,9 +134,9 @@ public final class Plasmoire extends JComponent {
 
     private double distortion = INIT_SCALE;
 
-    private int startX = -2 * INIT_POLE_DIST;
+    private int startX = 0;//-2 * INIT_POLE_DIST;
 
-    private int startY = -2 * INIT_POLE_DIST;
+    private int startY = -1080/2;//-2 * INIT_POLE_DIST;
 
     public Plasmoire() {
         /* Nothing to do here */
